@@ -1,0 +1,15 @@
+* USAGE
+  1. Bitbucket, GIThub, GITlab
+     #+begin_src sh
+       ./get_BITBUCKET.py
+       ./get_GITHUB.py
+       ./get_GITLAB.py
+     #+end_src
+  2. *git clone* or *git submodule* using the created file.
+     #+begin_src sh
+       git_clone_submodule  -s s -f test.org
+     #+end_src
+     You can get help from *git_clone_submodule*
+     #+begin_src sh
+     git_clone_submodule -h
+     #+end_src

@@ -1,0 +1,118 @@
+#!/bin/zsh
+# ---------------------------------------------------------------------------
+# git_clone - read line from file then batchly git clone or git submodule
+
+# Copyright 2016, yuyuxuan <yuyuxuan@osboxes>
+# All rights reserved.
+
+# Usage: git_clone [-h|--help] [-s|--selection SELECTION] [-f|--file FILE] [-d|--depth DEPTH]
+
+# Revision history:
+# 2016-02-12 Created by new_script ver. 3.3
+# ---------------------------------------------------------------------------
+
+PROGNAME=${0##*/}
+VERSION="0.1"
+
+clean_up() { # Perform pre-exit housekeeping
+  return
+}
+
+error_exit() {
+  echo -e "${PROGNAME}: ${1:-"Unknown Error"}" >&2
+  clean_up
+  exit 1
+}
+
+graceful_exit() {
+  clean_up
+  exit
+}
+
+signal_exit() { # Handle trapped signals
+  case $1 in
+    INT)
+      error_exit "Program interrupted by user" ;;
+    TERM)
+      echo -e "\n$PROGNAME: Program terminated" >&2
+      graceful_exit ;;
+    *)
+      error_exit "$PROGNAME: Terminating on unknown signal" ;;
+  esac
+}
+
+usage() {
+  echo -e "Usage: $PROGNAME [-h|--help] [-s|--selection SELECTION] [-f|--file FILE] [-d|--depth DEPTH]"
+}
+
+help_message() {
+  cat <<- _EOF_
+  $PROGNAME ver. $VERSION
+  read line from file then batchly git clone or git submodule
+
+  $(usage)
+
+  Options:
+  -h, --help  Display this help message and exit.
+  -s, --selection SELECTION  git clone or git submodule
+    Where 'SELECTION' is the clone or submodule.
+  -f, --file FILE  read line from file
+    Where 'FILE' is the filename.
+  -d, --depth DEPTH  git clone or git submodule with shallow repo
+    Where 'DEPTH' is the integer.
+_EOF_
+  return
+}
+
+# Trap signals
+trap "signal_exit TERM" TERM HUP
+trap "signal_exit INT"  INT
+
+
+
+# Parse command-line
+while [[ -n $1 ]]; do
+  case $1 in
+    -h | --help)
+      help_message; graceful_exit ;;
+    -s | --selection)
+      echo "git clone or git submodule"; shift; SELECTION="$1" ;;
+    -f | --file)
+      echo "read line from file"; shift; FILE="$1" ;;
+    -d | --depth)
+      echo "with shallow repo"; shift; DEPTH="$1" ;;
+    -* | --*)
+      usage
+      error_exit "Unknown option $1" ;;
+    *)
+      echo "Argument $1 to process..." ;;
+  esac
+  shift
+done
+
+# Main logic
+
+contains() {
+    string="$1"
+    substring="$2"
+    if test "${string#*$substring}" != "$string"
+    then
+        return 0    # $substring is in $string
+    else
+        return 1    # $substring is not in $string
+    fi
+    }
+
+[[ -z "${DEPTH// }" ]] || DEPTH=" --depth ${DEPTH}"
+while IFS='' read -r line || [[ -n "$line" ]]; do
+
+    contains ${SELECTION} "c"  &&  git clone ${DEPTH} $line
+    contains ${SELECTION} "s"  &&  git submodule add ${DEPTH} $line
+
+done <"${FILE}"
+
+# if [[ "x${DEPTH}" != "x" ]] ; then
+#     echo DEP:${DEPTH}
+# fi
+
+graceful_exit
